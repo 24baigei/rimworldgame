@@ -3,7 +3,8 @@ import { GameState, GameEvent, EventResolution } from "../types";
 // PackyAPI 网关配置（OpenAI 兼容风格）
 // 如果官方文档给出的 baseUrl 或路径不同，请按文档修改下面常量。
 const PACKY_API_KEY = process.env.API_KEY;
-const PACKY_BASE_URL = "https://api.packyapi.com/v1";
+// 使用新的 SLB 域名作为网关
+const PACKY_BASE_URL = "https://api-slb.packyapi.com";
 const MODEL_NAME = "gemini-2.5-flash"; // 与你在 Packy 后台选择的模型名称保持一致
 
 // 叙事风格设定
@@ -21,7 +22,8 @@ async function callPacky(prompt: string): Promise<string> {
     throw new Error("Packy API key (process.env.API_KEY) is missing");
   }
 
-  const response = await fetch(`${PACKY_BASE_URL}/chat/completions`, {
+  // OpenAI 兼容路径：/v1/chat/completions
+  const response = await fetch(`${PACKY_BASE_URL}/v1/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -174,4 +176,3 @@ export const resolveGameEvent = async (
     };
   }
 };
-
