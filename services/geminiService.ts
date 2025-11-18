@@ -65,6 +65,25 @@ async function callPacky(prompt: string): Promise<string> {
   throw new Error("Unsupported message format from PackyAPI");
 }
 
+// 从模型返回的文本中提取 JSON（容忍 ```json ``` 代码块等包裹形式）
+function extractJson<T = any>(text: string): T {
+  let cleaned = text.trim();
+
+  // 去掉 Markdown 代码块围栏 ```json ... ```
+  cleaned = cleaned.replace(/^```json\s*/i, "");
+  cleaned = cleaned.replace(/^```/, "");
+  cleaned = cleaned.replace(/```$/, "");
+
+  // 只取第一个 { 到最后一个 } 之间的内容，防止前后有多余说明文字
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  return JSON.parse(cleaned) as T;
+}
+
 export const generateGameEvent = async (gameState: GameState): Promise<GameEvent> => {
   const eventTypes = [
     "环境危机 (沙尘暴、酸雨、极端温度)",
@@ -109,7 +128,7 @@ export const generateGameEvent = async (gameState: GameState): Promise<GameEvent
 
   try {
     const text = await callPacky(prompt);
-    return JSON.parse(text) as GameEvent;
+    return extractJson<GameEvent>(text);
   } catch (error) {
     console.error("Gemini Event Generation Error:", error);
     return {
@@ -164,7 +183,7 @@ export const resolveGameEvent = async (
 
   try {
     const text = await callPacky(prompt);
-    return JSON.parse(text) as EventResolution;
+    return extractJson<EventResolution>(text);
   } catch (error) {
     console.error("Gemini Resolution Error:", error);
     return {
